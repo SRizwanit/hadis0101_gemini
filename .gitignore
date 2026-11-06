@@ -1,0 +1,25 @@
+node_modules/
+*.mp4
+*.mov
+*.webm
+*.png
+preview/
+.remotion/
+build/
+out/
+*.log
+npm-debug.log*
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Exceptions
+!google-play-badge.png
+
+# Keep these in repo:
+# logo.jpg
+# hadis0101.json
+# hadis0101.synced.json
+# hadis0101.wav
+# sync-report.json

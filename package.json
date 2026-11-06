@@ -1,0 +1,25 @@
+{
+  "name": "hadis-video-kit",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "remotion studio",
+    "check": "node check-sync.mjs --file hadis0101.synced.json",
+    "check:original": "node check-sync.mjs --file hadis0101.json",
+    "fix-sync": "node sync-fix.mjs",
+    "compositions": "remotion compositions index.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "remotion": "4.0.340",
+    "@remotion/cli": "4.0.340",
+    "@remotion/google-fonts": "4.0.340",
+    "@remotion/media-utils": "4.0.340"
+  },
+  "devDependencies": {
+    "@types/react": "18.3.12",
+    "typescript": "5.8.3"
+  }
+}
