@@ -23,11 +23,9 @@ export const Background: React.FC = () => {
 
   const t = frame / 30;
 
-  // Gentle drift of background radial center
   const cx = 50 + Math.sin(t * 0.1) * 3;
   const cy = 30 + Math.cos(t * 0.08) * 3;
 
-  // Moon floating
   const moonY = Math.sin(t * 1.05) * 8;
   const moonRot = Math.sin(t * 0.8) * 3.5;
 
@@ -55,7 +53,6 @@ export const Background: React.FC = () => {
         pointerEvents: 'none',
       }}
     >
-      {/* 1. Islamic Star Grid Pattern (Subtle) */}
       <svg width={width} height={height} style={{position: 'absolute', opacity: 0.06}}>
         <defs>
           <pattern id="star-grid" width="190" height="190" patternUnits="userSpaceOnUse" patternTransform={`rotate(${t * 0.4})`}>
@@ -65,7 +62,6 @@ export const Background: React.FC = () => {
         <rect width="100%" height="100%" fill="url(#star-grid)" />
       </svg>
 
-      {/* 2. God Rays */}
       <svg width={width} height={height} style={{position: 'absolute', opacity: 0.055}}>
         <defs>
           <radialGradient id="ray-grad" cx="85%" cy="15%" r="80%">
@@ -80,11 +76,9 @@ export const Background: React.FC = () => {
         </g>
       </svg>
 
-      {/* 3. Twinkling Stars */}
       <svg width={width} height={height} style={{position: 'absolute'}}>
         {stars.map((s, idx) => {
           const alpha = 0.2 + (Math.sin(t * (Math.PI * 2 / s.period) + s.phase) + 1) * 0.4;
-          // Dim down behind caption area
           const inCaptionBox = s.y > layout.karaoke.centerY - 150 && s.y < layout.karaoke.centerY + 150;
           const finalAlpha = inCaptionBox ? alpha * 0.3 : alpha;
 
@@ -101,7 +95,6 @@ export const Background: React.FC = () => {
         })}
       </svg>
 
-      {/* 4. Crescent Moon (Top Right) */}
       <div
         style={{
           position: 'absolute',
@@ -123,7 +116,6 @@ export const Background: React.FC = () => {
         </svg>
       </div>
 
-      {/* 5. Mosque Silhouette & Horizon at Bottom */}
       <div
         style={{
           position: 'absolute',
@@ -147,20 +139,16 @@ export const Background: React.FC = () => {
             </linearGradient>
           </defs>
           <rect y={100} width={1920} height={100} fill="url(#horizon-grad)" />
-          {/* Skyline Silhouettes */}
           <path
             d="M0 200 L0 140 L120 140 L150 110 L180 140 L350 140 L380 90 L410 140 L700 140 Q960 40 1220 140 L1500 140 L1530 100 L1560 140 L1920 140 L1920 200 Z"
             fill={COLORS.bgDeep}
           />
-          {/* Central Grand Dome */}
           <path d="M900 140 Q960 30 1020 140 Z" fill="url(#dome-grad)" />
-          {/* Minarets */}
           <rect x="780" y="60" width="30" height="140" fill={COLORS.bgDeep} />
           <rect x="1110" y="60" width="30" height="140" fill={COLORS.bgDeep} />
         </svg>
       </div>
 
-      {/* 6. Vignette overlay */}
       <AbsoluteFill
         style={{
           background: 'radial-gradient(circle at 50% 50%, rgba(0,0,0,0) 50%, rgba(5,46,33,0.45) 100%)',

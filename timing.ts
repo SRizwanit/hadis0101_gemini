@@ -73,7 +73,6 @@ export function buildPages(
   const rawChunks: HadisWord[][] = [];
   
   for (const secKey of ['A', 'B', 'C', 'D'] as SectionId[]) {
-    const secObj = SECTIONS[secKey];
     const secWords = words.filter(w => w.sectionId === secKey);
     if (!secWords.length) continue;
 

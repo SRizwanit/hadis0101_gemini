@@ -61,7 +61,6 @@ export const Header: React.FC<HeaderProps> = ({opacity = 1}) => {
         pointerEvents: 'none',
       }}
     >
-      {/* Logo Badge with S2 Chip */}
       <div style={{position: 'relative', transform: `scale(${logoScale})`}}>
         <div
           style={{
@@ -80,7 +79,6 @@ export const Header: React.FC<HeaderProps> = ({opacity = 1}) => {
           <Img src={logo} style={{width: '80%', height: '80%', objectFit: 'contain'}} />
         </div>
 
-        {/* S2 Chip */}
         <div
           style={{
             position: 'absolute',
@@ -100,7 +98,6 @@ export const Header: React.FC<HeaderProps> = ({opacity = 1}) => {
         </div>
       </div>
 
-      {/* Title */}
       <div
         style={{
           marginTop: layout.header.gap,
@@ -126,7 +123,6 @@ export const Header: React.FC<HeaderProps> = ({opacity = 1}) => {
         </h1>
       </div>
 
-      {/* Source Pill */}
       <div
         style={{
           marginTop: 10,

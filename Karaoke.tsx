@@ -20,7 +20,7 @@ export interface KaraokeProps {
   holdLastPage?: boolean;
 }
 
-export const Karaoke: React.FC<KaraokeProps> = ({opacity = 1, timeOffsetSec = 0, holdLastPage = true}) => {
+export const Karaoke: React.FC<KaraokeProps> = ({opacity = 1, timeOffsetSec = 0}) => {
   const frame = useCurrentFrame();
   const {width, height, fps} = useVideoConfig();
   const layout = getLayout(width, height);
@@ -49,11 +49,10 @@ export const Karaoke: React.FC<KaraokeProps> = ({opacity = 1, timeOffsetSec = 0,
         justifyContent: 'center',
       }}
     >
-      {activePages.map(({page, opacity: pageOp, ageSec}, pIdx) => {
+      {activePages.map(({page, opacity: pageOp}, pIdx) => {
         const isLesson = page.sectionId === 'D';
         const sizeMul = KARAOKE_LOOK.sizeFactor[page.sectionKind as keyof typeof KARAOKE_LOOK.sizeFactor] || 1.0;
         const fontSize = layout.karaoke.size * sizeMul;
-
         const boxWidth = width * layout.karaoke.boxWidthRatio;
 
         return (
@@ -71,7 +70,6 @@ export const Karaoke: React.FC<KaraokeProps> = ({opacity = 1, timeOffsetSec = 0,
               transform: `translateY(${Math.max(0, (1 - pageOp) * 12)}px)`,
             }}
           >
-            {/* Lesson Card Wrapper if Section D */}
             {isLesson && (
               <div
                 style={{
@@ -87,7 +85,6 @@ export const Karaoke: React.FC<KaraokeProps> = ({opacity = 1, timeOffsetSec = 0,
                   zIndex: -1,
                 }}
               >
-                {/* Lesson Label Badge */}
                 <div
                   style={{
                     position: 'absolute',
@@ -110,7 +107,6 @@ export const Karaoke: React.FC<KaraokeProps> = ({opacity = 1, timeOffsetSec = 0,
               </div>
             )}
 
-            {/* Words Container */}
             <div
               style={{
                 display: 'flex',

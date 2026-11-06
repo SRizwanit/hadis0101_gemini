@@ -114,14 +114,14 @@ export function getUnit(w: number, h: number): number {
 }
 
 export const CAPTION_COLORS = [
-  '#FFD34D', // Gold
-  '#6CCBFF', // Cyan
-  '#FF9580', // Coral
-  '#C3F26B', // Lime
-  '#C0A8FF', // Lavender
-  '#FFB259', // Orange
-  '#6EE7B7', // Mint
-  '#FF9BD2', // Pink
+  '#FFD34D',
+  '#6CCBFF',
+  '#FF9580',
+  '#C3F26B',
+  '#C0A8FF',
+  '#FFB259',
+  '#6EE7B7',
+  '#FF9BD2',
 ];
 
 export function captionColor(wordIndex: number): string {

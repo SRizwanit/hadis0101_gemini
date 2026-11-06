@@ -1,5 +1,5 @@
 import React from 'react';
-import {COLORS, getLayout, getUnit} from './theme';
+import {COLORS} from './theme';
 import {DEFAULT_BAND_OPACITY} from './svg-data';
 
 export const SVG_LOOK = {
@@ -237,7 +237,6 @@ export const SceneFrame: React.FC<SceneFrameProps> = ({
   const maskId = svgId(idPrefix, 'band-mask');
   const gradId = svgId(idPrefix, 'band-grad');
   const stops = bandMaskStops(width, height, bandOpacity, featherPx);
-  const z = zonesOf(width, height);
 
   const useMask = bandOpacity < 1;
 
@@ -326,7 +325,7 @@ export interface Sparkle {
 }
 
 export function starPath(size: number): string {
-  return `M0,-${size} Q0,0 ${size},0 Q0,0 0,${size} Q0,0 -${size},0 Q0,0 0,-{size} Z`;
+  return `M0,-${size} Q0,0 ${size},0 Q0,0 0,${size} Q0,0 -${size},0 Q0,0 0,-${size} Z`;
 }
 
 export function makeSparkles(seed: number, count: number, zone: Zone): Sparkle[] {

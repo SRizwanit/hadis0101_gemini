@@ -1,8 +1,8 @@
 import React from 'react';
-import {interpolate, interpolateColors, useCurrentFrame, useVideoConfig} from 'remotion';
+import {interpolate, useCurrentFrame, useVideoConfig} from 'remotion';
 import {ARABIC_PARTIAL, getSectionTiming} from './hadis-data';
 import {COLORS, FONTS, FONT_WEIGHTS, LINE_HEIGHT, getLayout} from './theme';
-import {audioSecAt, wordProgress, wordState} from './timing';
+import {audioSecAt} from './timing';
 
 export const ARABIC_TIMING = {
   leadSec: 0.25,
@@ -27,7 +27,6 @@ export const ArabicBlock: React.FC<ArabicBlockProps> = ({opacity = 1, timeOffset
   const frame = useCurrentFrame();
   const {width, height, fps} = useVideoConfig();
   const layout = getLayout(width, height);
-  const isPortrait = height > width;
 
   const currentSec = audioSecAt(frame, fps, timeOffsetSec);
   const win = getArabicWindow();
@@ -36,9 +35,7 @@ export const ArabicBlock: React.FC<ArabicBlockProps> = ({opacity = 1, timeOffset
     return null;
   }
 
-  // Calculate entrance/exit alpha
   let alpha = 1;
-  const fadeInDuration = ARABIC_TIMING.fadeInSec;
   if (currentSec < win.sectionStartSec) {
     alpha = interpolate(currentSec, [win.showStartSec, win.sectionStartSec], [0, 1], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'});
   } else if (currentSec > win.sectionEndSec + ARABIC_TIMING.outDelaySec) {
@@ -63,7 +60,6 @@ export const ArabicBlock: React.FC<ArabicBlockProps> = ({opacity = 1, timeOffset
         pointerEvents: 'none',
       }}
     >
-      {/* Glow Halo */}
       <div
         style={{
           position: 'absolute',
@@ -94,16 +90,13 @@ export const ArabicBlock: React.FC<ArabicBlockProps> = ({opacity = 1, timeOffset
           maxWidth: '85%',
         }}
       >
-        {arabicWords.map((w, i) => {
-          return (
-            <span key={i} style={{display: 'inline-block'}}>
-              {w}
-            </span>
-          );
-        })}
+        {arabicWords.map((w, i) => (
+          <span key={i} style={{display: 'inline-block'}}>
+            {w}
+          </span>
+        ))}
       </div>
 
-      {/* Decorative Diamond Divider */}
       <div style={{marginTop: 12, display: 'flex', alignItems: 'center', gap: 12, opacity: 0.8}}>
         <div style={{width: 80, height: 1.5, background: `linear-gradient(90deg, transparent, ${COLORS.gold})`}} />
         <div style={{width: 6, height: 6, transform: 'rotate(45deg)', background: COLORS.gold}} />

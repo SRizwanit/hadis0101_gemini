@@ -1,4 +1,4 @@
-import {WORDS, HadisWord, getSectionTiming} from './hadis-data';
+import {WORDS, HadisWord} from './hadis-data';
 
 export type SceneId = 'sanad' | 'minbar' | 'madina' | 'niyyah' | 'amal' | 'fruit' | 'hijra' | 'duniyaNari' | 'lesson' | 'najat';
 export type SceneLayer = 'main' | 'overlay';
@@ -87,7 +87,7 @@ export function computeSceneWindows(words: HadisWord[] = WORDS): SceneWindow[] {
     const wEnd = words[cur.last].end;
 
     let startSec = i === 0 ? 0 : (words[mainScenes[i - 1].last].end + wStart) / 2;
-    let endSec = i === mainNamesLength(mainScenes) - 1 ? 38.32 : (wEnd + words[mainScenes[i + 1].first].start) / 2;
+    let endSec = i === mainScenes.length - 1 ? 38.32 : (wEnd + words[mainScenes[i + 1].first].start) / 2;
 
     windows.push({
       id: cur.id,
@@ -117,10 +117,6 @@ export function computeSceneWindows(words: HadisWord[] = WORDS): SceneWindow[] {
   }
 
   return windows;
-}
-
-function mainNamesLength(list: SceneDef[]) {
-  return list.length;
 }
 
 export const SCENE_WINDOWS = computeSceneWindows(WORDS);
@@ -155,7 +151,6 @@ export function sceneBoundaries(): number[] {
 export function sceneOpacityAt(id: SceneId, sec: number): number {
   const win = sceneWindow(id);
   const def = getScene(id);
-  const cf = SVG_TIMING.crossfadeSec;
 
   if (def.layer === 'overlay') {
     if (sec < win.startSec || sec > win.endSec) return 0;
@@ -217,7 +212,6 @@ export interface PopupState {
 export function computePopupWindows(words: HadisWord[] = WORDS) {
   return KEYWORDS.filter(k => k.enabled).map(k => {
     const firstW = words[k.wordIndices[0]];
-    const lastW = words[k.wordIndices[k.wordIndices.length - 1]];
     const startSec = firstW.start - SVG_TIMING.popupLeadSec;
     const hold = k.holdSec ?? SVG_TIMING.popupHoldSec;
     const endSec = Math.min(38.32, startSec + hold);

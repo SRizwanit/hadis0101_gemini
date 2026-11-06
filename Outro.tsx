@@ -111,7 +111,7 @@ export const Outro: React.FC<OutroProps> = ({opacity = 1, durationSec = OUTRO_SE
           style={{
             width: layout.outro.logoHeight,
             height: layout.outro.logoHeight,
-            borderRadius: RADIUS_FN(RADIUS.lg),
+            borderRadius: RADIUS.lg,
             background: COLORS.white,
             border: `4px solid ${COLORS.gold}`,
             boxShadow: `0 15px 40px rgba(0,0,0,0.5), 0 0 30px ${COLORS.glowGold}`,
@@ -157,7 +157,7 @@ export const Outro: React.FC<OutroProps> = ({opacity = 1, durationSec = OUTRO_SE
             textShadow: '0 2px 10px rgba(0,0,0,0.5)',
           }}
         >
-          {APP_NAME_LABEL()}
+          ইসলামী বিশ্বকোষ ও আল হাদিস
         </span>
         <div
           style={{
@@ -206,10 +206,3 @@ export const Outro: React.FC<OutroProps> = ({opacity = 1, durationSec = OUTRO_SE
     </div>
   );
 };
-
-function RADIUS_FN(r: number) {
-  return r;
-}
-function APP_NAME_LABEL() {
-  return 'ইসলামী বিশ্বকোষ ও আল হাদিস';
-}
