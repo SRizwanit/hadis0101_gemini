@@ -1,1 +1,275 @@
+name: Render Hadis Video
 
+on:
+  workflow_dispatch:
+    inputs:
+      formats:
+        description: 'Render Target Format'
+        required: true
+        default: 'preview'
+        type: choice
+        options:
+          - preview
+          - 16x9-HD
+          - 16x9-4K
+          - 9x16-HD
+          - 9x16-4K
+          - all
+
+permissions:
+  contents: read
+
+env:
+  CHROME_LIBS: "libnss3 libdbus-1-3 libatk1.0-0 libgbm-dev libasound2t64 libxrandr2 libxkbcommon-dev libxfixes3 libxcomposite1 libxdamage1 libatk-bridge2.0-0 libpango-1.0-0 libcairo2 libcups2"
+  EXPECTED_SEC: "43.33"
+  DURATION_TOLERANCE: "0.5"
+
+jobs:
+  check:
+    name: Check & TypeCheck
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Cache npm
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: npm-${{ runner.os }}-${{ hashFiles('package.json') }}
+          restore-keys: |
+            npm-${{ runner.os }}-
+
+      - name: Install FFmpeg
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Run audio sync check
+        run: npm run check
+
+      - name: Run TypeScript typecheck
+        run: npx tsc --noEmit
+
+      - name: Install Chrome dependencies for Remotion
+        run: |
+          sudo apt-get install -y $CHROME_LIBS
+          npx remotion browser ensure
+
+      - name: Verify Remotion compositions
+        run: |
+          npx remotion compositions index.ts > compositions.log 2>&1
+          cat compositions.log
+          if ! grep -q "Hadis-16x9" compositions.log || ! grep -q "Hadis-9x16" compositions.log; then
+            echo "::error::Remotion compositions output missing Hadis-16x9 or Hadis-9x16"
+            exit 1
+          fi
+
+  prepare:
+    name: Prepare Render Matrix
+    needs: check
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+      has_video: ${{ steps.set-matrix.outputs.has_video }}
+      run_preview: ${{ steps.set-matrix.outputs.run_preview }}
+    steps:
+      - name: Evaluate Matrix
+        id: set-matrix
+        run: |
+          FORMATS="${{ github.event.inputs.formats }}"
+          echo "Selected format input: $FORMATS"
+
+          if [ "$FORMATS" = "preview" ]; then
+            echo "matrix={"include":[]}" >> $GITHUB_OUTPUT
+            echo "has_video=false" >> $GITHUB_OUTPUT
+            echo "run_preview=true" >> $GITHUB_OUTPUT
+          else
+            if [ "$FORMATS" = "all" ]; then
+              MATRIX_JSON='{"include":[
+                {"id":"16x9-HD","comp":"Hadis-16x9","scale":1,"crf":20,"out":"hadis0101-16x9-HD.mp4","w":1920,"h":1080},
+                {"id":"16x9-4K","comp":"Hadis-16x9","scale":2,"crf":18,"out":"hadis0101-16x9-4K.mp4","w":3840,"h":2160},
+                {"id":"9x16-HD","comp":"Hadis-9x16","scale":1,"crf":20,"out":"hadis0101-9x16-HD.mp4","w":1080,"h":1920},
+                {"id":"9x16-4K","comp":"Hadis-9x16","scale":2,"crf":18,"out":"hadis0101-9x16-4K.mp4","w":2160,"h":3840}
+              ]}'
+            elif [ "$FORMATS" = "16x9-HD" ]; then
+              MATRIX_JSON='{"include":[{"id":"16x9-HD","comp":"Hadis-16x9","scale":1,"crf":20,"out":"hadis0101-16x9-HD.mp4","w":1920,"h":1080}]}'
+            elif [ "$FORMATS" = "16x9-4K" ]; then
+              MATRIX_JSON='{"include":[{"id":"16x9-4K","comp":"Hadis-16x9","scale":2,"crf":18,"out":"hadis0101-16x9-4K.mp4","w":3840,"h":2160}]}'
+            elif [ "$FORMATS" = "9x16-HD" ]; then
+              MATRIX_JSON='{"include":[{"id":"9x16-HD","comp":"Hadis-9x16","scale":1,"crf":20,"out":"hadis0101-9x16-HD.mp4","w":1080,"h":1920}]}'
+            elif [ "$FORMATS" = "9x16-4K" ]; then
+              MATRIX_JSON='{"include":[{"id":"9x16-4K","comp":"Hadis-9x16","scale":2,"crf":18,"out":"hadis0101-9x16-4K.mp4","w":2160,"h":3840}]}'
+            else
+              echo "::error::Unknown format input: $FORMATS"
+              exit 1
+            fi
+
+            echo "matrix=$MATRIX_JSON" >> $GITHUB_OUTPUT
+            echo "has_video=true" >> $GITHUB_OUTPUT
+            echo "run_preview=false" >> $GITHUB_OUTPUT
+          fi
+
+  preview:
+    name: Generate Preview Stills
+    needs: [check, prepare]
+    if: needs.prepare.outputs.run_preview == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Cache npm
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: npm-${{ runner.os }}-${{ hashFiles('package.json') }}
+
+      - name: Install dependencies & browser
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg $CHROME_LIBS
+          npm install --no-audit --no-fund
+          npx remotion browser ensure
+
+      - name: Render Preview Stills
+        run: |
+          mkdir -p preview
+          FRAMES="0 60 300 480 560 700 1000 1160 1190 1250 1299"
+          for comp in Hadis-16x9 Hadis-9x16; do
+            for f in $FRAMES; do
+              echo "Rendering still for $comp at frame $f"
+              npx remotion still index.ts "$comp" "preview/${comp}-f$(printf "%04d" $f).png" --frame="$f" --scale=1 --timeout=120000
+            done
+          done
+
+      - name: Upload Preview Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: hadis0101-preview
+          path: preview/
+          retention-days: 14
+
+  render:
+    name: Render (${{ matrix.id }})
+    needs: [check, prepare]
+    if: needs.prepare.outputs.has_video == 'true'
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.prepare.outputs.matrix) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Cache npm
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: npm-${{ runner.os }}-${{ hashFiles('package.json') }}
+
+      - name: Install FFmpeg & Chrome dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg $CHROME_LIBS
+
+      - name: Install dependencies & browser
+        run: |
+          npm install --no-audit --no-fund
+          npx remotion browser ensure
+
+      - name: Render Video
+        env:
+          COMP: ${{ matrix.comp }}
+          OUT: ${{ matrix.out }}
+          SCALE: ${{ matrix.scale }}
+          CRF: ${{ matrix.crf }}
+        run: |
+          echo "Starting render for $OUT (Comp: $COMP, Scale: $SCALE, CRF: $CRF)"
+          npx remotion render index.ts "$COMP" "$OUT"             --scale="$SCALE"             --codec=h264             --crf="$CRF"             --pixel-format=yuv420p             --audio-codec=aac             --audio-bitrate=192k             --concurrency=4             --timeout=120000
+
+      - name: Verify Output with FFprobe
+        env:
+          OUT: ${{ matrix.out }}
+          EXPECT_W: ${{ matrix.w }}
+          EXPECT_H: ${{ matrix.h }}
+        run: |
+          echo "Verifying $OUT with ffprobe..."
+          if [ ! -f "$OUT" ] || [ ! -s "$OUT" ]; then
+            echo "::error::Output file $OUT is missing or empty."
+            exit 1
+          fi
+
+          V_CODEC=$(ffprobe -v error -select_streams v:0 -show_entries stream=codec_name -of default=noprint_wrappers=1:nokey=1 "$OUT")
+          V_W=$(ffprobe -v error -select_streams v:0 -show_entries stream=width -of default=noprint_wrappers=1:nokey=1 "$OUT")
+          V_H=$(ffprobe -v error -select_streams v:0 -show_entries stream=height -of default=noprint_wrappers=1:nokey=1 "$OUT")
+          V_PIX=$(ffprobe -v error -select_streams v:0 -show_entries stream=pix_fmt -of default=noprint_wrappers=1:nokey=1 "$OUT")
+
+          echo "Detected Video: codec=$V_CODEC, resolution=${V_W}x${V_H}, pix_fmt=$V_PIX"
+
+          if [ "$V_CODEC" != "h264" ]; then
+            echo "::error::Video codec is $V_CODEC, expected h264."
+            exit 1
+          fi
+          if [ "$V_W" != "$EXPECT_W" ] || [ "$V_H" != "$EXPECT_H" ]; then
+            echo "::error::Resolution is ${V_W}x${V_H}, expected ${EXPECT_W}x${EXPECT_H}."
+            exit 1
+          fi
+          if [ "$V_PIX" != "yuv420p" ]; then
+            echo "::error::Pixel format is $V_PIX, expected yuv420p."
+            exit 1
+          fi
+
+          A_STREAM=$(ffprobe -v error -select_streams a:0 -show_entries stream=codec_type -of default=noprint_wrappers=1:nokey=1 "$OUT")
+          A_CODEC=$(ffprobe -v error -select_streams a:0 -show_entries stream=codec_name -of default=noprint_wrappers=1:nokey=1 "$OUT")
+          echo "Detected Audio: stream=$A_STREAM, codec=$A_CODEC"
+
+          if [ "$A_STREAM" != "audio" ] || [ "$A_CODEC" != "aac" ]; then
+            echo "::error::Audio stream missing or codec is not aac (got $A_CODEC)."
+            exit 1
+          fi
+
+          DURATION=$(ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "$OUT")
+          echo "Detected Duration: $DURATION seconds (Expected: $EXPECTED_SEC ± $DURATION_TOLERANCE)"
+
+          DIFF=$(awk "BEGIN {print $DURATION - $EXPECTED_SEC}")
+          ABS_DIFF=$(awk "BEGIN {print $DIFF < 0 ? -$DIFF : $DIFF}")
+          OUT_OF_RANGE=$(awk "BEGIN {print $ABS_DIFF > $DURATION_TOLERANCE ? 1 : 0}")
+
+          if [ "$OUT_OF_RANGE" -eq "1" ]; then
+            echo "::error::Video duration $DURATION sec deviates from expected $EXPECTED_SEC sec by more than tolerance $DURATION_TOLERANCE."
+            exit 1
+          fi
+
+          FILESIZE_MB=$(du -m "$OUT" | cut -f1)
+          echo "### Render Successful: ${{ matrix.id }}" >> $GITHUB_STEP_SUMMARY
+          echo "- File: $OUT ($FILESIZE_MB MB)" >> $GITHUB_STEP_SUMMARY
+          echo "- Resolution: ${V_W}x${V_H}" >> $GITHUB_STEP_SUMMARY
+          echo "- Duration: $DURATION sec" >> $GITHUB_STEP_SUMMARY
+
+      - name: Upload Video Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: hadis0101-${{ matrix.id }}
+          path: ${{ matrix.out }}
+          retention-days: 14
+          compression-level: 0
